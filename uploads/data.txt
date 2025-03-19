@@ -1,0 +1,11 @@
+"Machine learning is a subset of artificial intelligence that enables computers to learn from data.",
+    "Deep learning is a type of machine learning that uses neural networks with many layers.",
+    "FastAPI is a modern web framework for building APIs with Python.",
+    "FAISS is a library for efficient similarity search and clustering of dense vectors.",
+    "ChromaDB is an open-source embedding database used for retrieval-augmented generation (RAG).",
+    "Vector databases store high-dimensional data to enable fast similarity searches.",
+    "LangChain simplifies working with LLMs by providing tools for chaining prompts and memory.",
+    "Transformers are deep learning models used for natural language processing tasks like translation and chatbots.",
+    "OpenAI developed the GPT series of models, which are widely used for text generation.",
+    "Embeddings are numerical representations of text that help with semantic similarity searches."
+

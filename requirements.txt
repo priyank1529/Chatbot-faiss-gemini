@@ -1,0 +1,9 @@
+langchain==0.3.20
+langchain-core==0.3.44
+langchain-community==0.3.19
+fastapi==0.115.11
+langchain-huggingface==0.1.2
+langchain_ollama==0.2.3
+ollama==0.4.7
+pdfminer.six==20240706
+pymupdf==1.25.4
