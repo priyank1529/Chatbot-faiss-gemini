@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+chatenv/
+faiss_index.pkl
+data.txt
+uploads/
