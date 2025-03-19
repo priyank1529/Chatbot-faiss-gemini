@@ -16,6 +16,7 @@ import numpy as np
 
 # from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 app = FastAPI()
+print("llll")
 
 UPLOAD_FOLDER = "uploads"
 FAISS_INDEX_PATH = "faiss_index.pkl"
