@@ -9,17 +9,24 @@ from langchain_community.document_loaders import (
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
+from langchain_google_vertexai import VertexAI
 import os
 import pickle
 import faiss
 import numpy as np
+from dotenv import load_dotenv
 
+load_dotenv()
 # from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 app = FastAPI()
-print("llll")
+
 
 UPLOAD_FOLDER = "uploads"
 FAISS_INDEX_PATH = "faiss_index.pkl"
+model = VertexAI(model_name="gemini-pro", project=os.getenv("PROJECT_KEY"))
 
 if os.path.exists(FAISS_INDEX_PATH):
     with open(FAISS_INDEX_PATH, "rb") as f:
@@ -27,8 +34,6 @@ if os.path.exists(FAISS_INDEX_PATH):
 else:
     faiss_index = None
 
-
-llm = "LLm Model"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -47,44 +52,6 @@ def load_documents(file_path: str, file_type: str):
         return UnstructuredWordDocumentLoader(file_path).load()
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type")
-
-
-# def pad_dynamic_embedding(embedding):
-#     """
-#     Dynamically updates FAISS index dimensions and ensures all embeddings
-#     match the max dimension with zero-padding.
-#     """
-#     global current_max_dim, index, stored_embeddings
-
-#     current_dim = embedding.shape[1]
-
-#     if current_dim > current_max_dim:
-#         print(
-#             f"Updating FAISS index from {current_max_dim} to {current_dim} dimensions..."
-#         )
-
-#         # Update the max dimension
-#         current_max_dim = current_dim
-
-#         # Pad old embeddings to the new size
-#         padding = np.zeros(
-#             (stored_embeddings.shape[0], current_max_dim - stored_embeddings.shape[1])
-#         )
-#         stored_embeddings = np.hstack((stored_embeddings, padding))
-
-#         # Recreate FAISS index
-#         index = faiss.IndexFlatL2(current_max_dim)
-#         index.add(stored_embeddings)  # Re-add previous embeddings
-
-#     # Pad the new embedding
-#     padding = np.zeros((embedding.shape[0], current_max_dim - current_dim))
-#     embedding_fixed = np.hstack((embedding, padding))
-
-#     # Append to sto red embeddings and add to FAISS
-#     stored_embeddings = np.vstack((stored_embeddings, embedding_fixed))
-#     index.add(embedding_fixed)
-
-#     return embedding_fixed
 
 
 @app.post("/upload/")
@@ -154,7 +121,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.post("/search/")
 async def search_query(query: str = Form(...)):
-    global faiss_index
+    global faiss_index, model
 
     if not faiss_index:
         return {
@@ -167,5 +134,15 @@ async def search_query(query: str = Form(...)):
     )
     query_embeddings = embeddings.embed_query(query)
     results = faiss_index.similarity_search_by_vector(query_embeddings, k=5)
-
-    return {"query": query, "results": [docs for docs in results], "success": True}
+    prompt = ChatPromptTemplate.from_template(
+        "Answer the following question based only on the provided context. "
+        "Think step by step before providing a detailed answer.\n"
+        "<context> {context} </context>\n"
+        "Question: {input}",
+        template_format="f-string",  # Ensure correct string formatting
+    )
+    document_chain = create_stuff_documents_chain(model, prompt)
+    retriever = faiss_index.as_retriever()
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    response = retrieval_chain.invoke({"input": query})
+    return {"query": query, "results": response, "success": True}

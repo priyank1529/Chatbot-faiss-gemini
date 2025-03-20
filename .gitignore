@@ -177,3 +177,4 @@ chatenv/
 faiss_index.pkl
 data.txt
 uploads/
+.env
